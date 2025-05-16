@@ -1,5 +1,7 @@
 ﻿using System;
+using KoperasiTentera.DB;
 using KoperasiTentera.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace KoperasiTentera.Services
 {
@@ -14,10 +16,10 @@ namespace KoperasiTentera.Services
     }
     public class UserService : IUserService
     {
-        private readonly AppDbContext _context;
+        private readonly KoperasiTenteraDBContext _context;
         private readonly IVerificationService _verificationService;
 
-        public UserService(AppDbContext context, IVerificationService verificationService)
+        public UserService(KoperasiTenteraDBContext context, IVerificationService verificationService)
         {
             _context = context;
             _verificationService = verificationService;
