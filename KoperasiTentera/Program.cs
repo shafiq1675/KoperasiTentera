@@ -11,13 +11,10 @@ builder.Services.AddDbContext<KoperasiTenteraDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("KoperasiTenteraDBConn")));
 
 builder.Services.AddMemoryCache(); // For storing verification codes
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IVerificationService, VerificationService>();
-
-//reoisitories
-builder.Services.AddScoped<ILoginRepository, RegistrationRepository>();
-
-//services
-builder.Services.AddScoped<IRegistrationService, RegistrationService>();
+builder.Services.AddScoped<ISmsService, SmsService>(); // Implement your SMS service
+builder.Services.AddScoped<IEmailService, EmailService>(); // Implement your Email service
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

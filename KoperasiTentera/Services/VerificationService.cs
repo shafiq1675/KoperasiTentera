@@ -6,26 +6,36 @@ namespace KoperasiTentera.Services
     {
         Task<string> GenerateAndSendMobileVerificationCode(string mobileNumber);
         Task<string> GenerateAndSendEmailVerificationCode(string email);
-        Task<bool> VerifyMobileCode(string mobileNumber, string code);
-        Task<bool> VerifyEmailCode(string email, string code);
+        Task<bool> VerifyCode(string identifier, string code, string verificationType);
     }
+
     public class VerificationService : IVerificationService
     {
         private readonly IMemoryCache _cache;
-        private readonly TimeSpan _codeExpiry = TimeSpan.FromMinutes(5);
+        private readonly ISmsService _smsService;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _config;
 
-        public VerificationService(IMemoryCache cache)
+        public VerificationService(
+            IMemoryCache cache,
+            ISmsService smsService,
+            IEmailService emailService,
+            IConfiguration config)
         {
             _cache = cache;
+            _smsService = smsService;
+            _emailService = emailService;
+            _config = config;
         }
 
         public async Task<string> GenerateAndSendMobileVerificationCode(string mobileNumber)
         {
             var code = GenerateRandomCode();
-            _cache.Set($"MobileVerification_{mobileNumber}", code, _codeExpiry);
+            var cacheKey = $"mobile-verification-{mobileNumber}";
 
-            // TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
-            await SendSms(mobileNumber, $"Your verification code is: {code}");
+            _cache.Set(cacheKey, code, TimeSpan.FromMinutes(5));
+
+            await _smsService.SendSms(mobileNumber, $"Your verification code is: {code}");
 
             return code;
         }
@@ -33,41 +43,35 @@ namespace KoperasiTentera.Services
         public async Task<string> GenerateAndSendEmailVerificationCode(string email)
         {
             var code = GenerateRandomCode();
-            _cache.Set($"EmailVerification_{email}", code, _codeExpiry);
+            var cacheKey = $"email-verification-{email}";
 
-            // TODO: Integrate with Email service (SendGrid, SMTP, etc.)
-            await SendEmail(email, "Verify Your Email", $"Your verification code is: {code}");
+            _cache.Set(cacheKey, code, TimeSpan.FromMinutes(5));
+
+            await _emailService.SendEmail(email, "Verification Code", $"Your verification code is: {code}");
 
             return code;
         }
 
-        public Task<bool> VerifyMobileCode(string mobileNumber, string code)
+        public async Task<bool> VerifyCode(string identifier, string code, string verificationType)
         {
-            var storedCode = _cache.Get<string>($"MobileVerification_{mobileNumber}");
-            return Task.FromResult(storedCode != null && storedCode == code);
+            var cacheKey = $"{verificationType}-verification-{identifier}";
+
+            if (!_cache.TryGetValue(cacheKey, out string storedCode))
+                return false;
+
+            if (storedCode != code)
+                return false;
+
+            // Remove from cache after successful verification
+            _cache.Remove(cacheKey);
+
+            return true;
         }
 
-        public Task<bool> VerifyEmailCode(string email, string code)
+        private string GenerateRandomCode()
         {
-            var storedCode = _cache.Get<string>($"EmailVerification_{email}");
-            return Task.FromResult(storedCode != null && storedCode == code);
-        }
-
-        private string GenerateRandomCode() => new Random().Next(100000, 999999).ToString();
-
-        private Task SendSms(string mobileNumber, string message)
-        {
-            // TODO: Replace with actual SMS provider (Twilio, AWS SNS, etc.)
-            Console.WriteLine($"SMS to {mobileNumber}: {message}");
-            return Task.CompletedTask;
-        }
-
-        private Task SendEmail(string email, string subject, string body)
-        {
-            // TODO: Replace with actual Email service (SendGrid, SMTP, etc.)
-            Console.WriteLine($"Email to {email}: {subject} - {body}");
-            return Task.CompletedTask;
+            var random = new Random();
+            return random.Next(100000, 999999).ToString();
         }
     }
-
 }
