@@ -1,6 +1,7 @@
 Overview
+---
 This system provides a complete user registration and verification solution with:
-
+---
 1. Mobile number verification via SMS
 
 2. Email verification
@@ -26,6 +27,7 @@ Prerequisites:
 -----------
 
 API Endpoints
+---
 User Registration Flow
 ---------------------------------
 Check Registration Status:
